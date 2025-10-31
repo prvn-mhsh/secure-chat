@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secret Chat Vault</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col items-center justify-center min-h-screen p-6">
+  <h1 class="text-4xl font-bold mb-12 text-center">🔐 Secret Chat Vault</h1>
+
+  <div class="bg-gray-800 p-8 rounded-2xl shadow-lg w-full max-w-md">
+    <label class="block font-medium mt-2">Your Name</label>
+    <input id="username" type="text" class="w-full p-2 rounded bg-gray-700 text-white" placeholder="Enter your name">
+
+    <label class="block font-medium mt-2">Room / Chat ID</label>
+    <input id="room" type="text" class="w-full p-2 rounded bg-gray-700 text-white" placeholder="Enter a chat room ID">
+
+    <label class="block font-medium mt-2">Passphrase</label>
+    <input id="passphrase" type="text" class="w-full p-2 rounded bg-gray-700 text-white" placeholder="Shared passphrase">
+
+    <button id="joinBtn" class="w-full mt-4 bg-green-600 hover:bg-green-700 p-3 rounded text-xl font-semibold">Join Chat</button>
+  </div>
+
+  <script>
+    document.getElementById('joinBtn').onclick = () => {
+      const username = document.getElementById('username').value.trim();
+      const room = document.getElementById('room').value.trim();
+      const pass = document.getElementById('passphrase').value.trim();
+      if(!username || !room || !pass) return alert('Fill all fields!');
+      // Pass data via query string
+      window.location.href = `chat.html?username=${encodeURIComponent(username)}&room=${encodeURIComponent(room)}&pass=${encodeURIComponent(pass)}`;
+    }
+  </script>
+</body>
+</html>

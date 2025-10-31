@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secure Chat</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="symbol-vault.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 p-6 flex flex-col h-screen">
+
+<h1 class="text-3xl font-bold mb-4 text-center">🔐 Secure Chat</h1>
+
+<div id="chatBox" class="flex-1 bg-gray-800 rounded p-4 mb-4 overflow-y-auto"></div>
+
+<div class="flex gap-2">
+  <input id="msgInput" type="text" placeholder="Type your message..." class="flex-1 p-2 rounded bg-gray-700 text-white">
+  <button id="sendBtn" class="bg-green-600 px-4 py-2 rounded hover:bg-green-700">Send</button>
+</div>
+
+<script>
+const socket = io();
+const params = new URLSearchParams(window.location.search);
+const username = params.get('username');
+const room = params.get('room');
+const passphrase = params.get('pass');
+
+if(!username || !room || !passphrase){
+  alert('Missing username, room, or passphrase!');
+  window.location.href = 'index.html';
+}
+
+socket.emit('joinRoom', { username, room });
+
+const chatBox = document.getElementById('chatBox');
+const msgInput = document.getElementById('msgInput');
+
+function addMessage(text, from='', timestamp='') {
+  const div = document.createElement('div');
+  div.className = from === username ? "text-right text-green-400 mb-1" : "text-left text-gray-300 mb-1";
+  div.innerHTML = from ? `<span class="font-semibold">${from}</span> [${timestamp}]: ${text}` : text;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+document.getElementById('sendBtn').onclick = async () => {
+  const msg = msgInput.value.trim();
+  if(!msg) return;
+  const encrypted = await encryptMessage(msg, passphrase);
+  socket.emit('chatMessage', { room, encrypted });
+  const timestamp = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  addMessage(msg, username, timestamp);
+  msgInput.value = '';
+}
+
+socket.on('chatMessage', async ({ encrypted, from, timestamp }) => {
+  try {
+    const decrypted = await decryptMessage(encrypted, passphrase);
+    addMessage(decrypted, from, timestamp);
+  } catch(e) {
+    addMessage('[Failed to decrypt message]', from, timestamp);
+  }
+});
+</script>
+</body>
+</html>
