@@ -1,30 +1,60 @@
 const express = require('express');
+const cors = require('cors');
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http, { cors: { origin: "*" } });
 
-const PORT = 5000;
+app.use(cors());
+app.use(express.json());
 
-app.get('/', (req,res)=>res.send("Socket.io server running"));
+// in-memory storage
+const roomPassphrases = {};
+const roomMessages = {}; // room -> [{ from, encrypted, timestamp }]
 
-io.on('connection', (socket) => {
-  console.log('New client:', socket.id);
+app.get('/', (req, res) => res.send('REST API server running'));
 
-  socket.on('joinRoom', ({ username, room }) => {
-    socket.join(room);
-    socket.username = username;
-    socket.room = room;
-    console.log(`${username} joined ${room}`);
-  });
+// Validate passphrase for a room
+app.post('/api/validate', (req, res) => {
+  const { room, passphrase } = req.body;
+  if (!room || !passphrase) {
+    return res.status(400).json({ success: false, message: 'Missing room or passphrase' });
+  }
 
-  socket.on('chatMessage', ({ room, encrypted }) => {
-    const timestamp = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    socket.to(room).emit('chatMessage', { encrypted, from: socket.username, timestamp });
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`${socket.username || socket.id} disconnected`);
-  });
+  if (!roomPassphrases[room]) {
+    roomPassphrases[room] = passphrase;
+    return res.json({ success: true });
+  } else if (roomPassphrases[room] === passphrase) {
+    return res.json({ success: true });
+  } else {
+    return res.status(401).json({ success: false, message: 'Incorrect passphrase for this room.' });
+  }
 });
 
-http.listen(PORT, ()=>console.log(`Server running on http://localhost:${PORT}`));
+// Post a message to a room
+app.post('/api/message', (req, res) => {
+  const { room, encrypted, from, timestamp } = req.body;
+  if (!room || !encrypted) {
+    return res.status(400).json({ error: 'Missing room or message' });
+  }
+
+  if (!roomMessages[room]) {
+    roomMessages[room] = [];
+  }
+
+  roomMessages[room].push({ from, encrypted, timestamp });
+  res.json({ success: true });
+});
+
+// Get messages for a room (polling endpoint)
+app.get('/api/messages/:room', (req, res) => {
+  const { room } = req.params;
+  const messages = roomMessages[room] || [];
+  res.json(messages);
+});
+
+// Clear old messages (optional cleanup)
+app.delete('/api/messages/:room', (req, res) => {
+  delete roomMessages[req.params.room];
+  res.json({ success: true });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
