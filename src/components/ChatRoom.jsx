@@ -7,7 +7,7 @@ export default function ChatRoom({ username, room, passphrase, onBack }) {
   const [input, setInput] = useState('');
   const chatBox = useRef();
   const [lastPoll, setLastPoll] = useState(0);
-  const serverUrl = 'https://YOUR-RAILWAY-URL-HERE'; // Replace with your Railway URL
+  const serverUrl = 'https://secure-chat-production.up.railway.app/'; // Replace with your Railway URL
   // Poll for messages every 2 seconds
   useEffect(() => {
     const pollMessages = async () => {

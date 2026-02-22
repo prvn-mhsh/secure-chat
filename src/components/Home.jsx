@@ -7,7 +7,7 @@ export default function Home({ onJoin }) {
   const [passphrase, setPassphrase] = useState('');
   const [serverConnected, setServerConnected] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const serverUrl = 'https://YOUR-RAILWAY-URL-HERE'; // Replace with your Railway URL
+  const serverUrl = 'https://secure-chat-production.up.railway.app/'; // Replace with your Railway URL
 
   // monitor server availability using fetch
   useEffect(() => {
